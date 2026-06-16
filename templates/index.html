@@ -70,10 +70,13 @@
         <button id="refresh-feed" class="btn-icon btn-secondary" title="Force Refresh Feed">
           <i data-lucide="refresh-cw" id="refresh-icon"></i>
         </button>
-        <button id="theme-toggle" class="btn-icon btn-primary" title="Switch Theme">
-          <i data-lucide="sun" class="sun-icon"></i>
-          <i data-lucide="moon" class="moon-icon"></i>
-        </button>
+        <label class="theme-switch" for="theme-toggle-switch" title="Toggle Theme">
+          <input type="checkbox" id="theme-toggle-switch" aria-label="Toggle Theme">
+          <span class="slider">
+            <i data-lucide="sun" class="switch-icon sun"></i>
+            <i data-lucide="moon" class="switch-icon moon"></i>
+          </span>
+        </label>
       </div>
     </header>
 

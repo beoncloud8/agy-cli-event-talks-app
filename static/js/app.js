@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const bookmarkCountBadge = document.getElementById("bookmark-count");
   const refreshFeedBtn = document.getElementById("refresh-feed");
   const refreshIcon = document.getElementById("refresh-icon");
-  const themeToggleBtn = document.getElementById("theme-toggle");
+  const themeToggleSwitch = document.getElementById("theme-toggle-switch");
   const exportCsvBtn = document.getElementById("export-csv");
   
   const skeletonContainer = document.getElementById("skeleton-container");
@@ -739,23 +739,30 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================================
   // LIGHT / DARK MANUAL TOGGLE ( respecting modern-web rules )
   // ==========================================================================
-  themeToggleBtn.addEventListener("click", () => {
-    const isDark = document.documentElement.classList.contains("dark-theme");
-    const nextTheme = isDark ? "light" : "dark";
-    
-    localStorage.setItem("color-scheme", nextTheme);
-    document.querySelector('meta[name="color-scheme"]').content = nextTheme;
-    
-    if (nextTheme === "dark") {
-      document.documentElement.classList.add("dark-theme");
-      document.documentElement.classList.remove("light-theme");
-      showToast("Dark theme enabled");
-    } else {
-      document.documentElement.classList.add("light-theme");
-      document.documentElement.classList.remove("dark-theme");
-      showToast("Light theme enabled");
-    }
-  });
+  // Set initial state of theme switch checkbox
+  if (themeToggleSwitch) {
+    themeToggleSwitch.checked = document.documentElement.classList.contains("dark-theme");
+  }
+
+  if (themeToggleSwitch) {
+    themeToggleSwitch.addEventListener("change", (e) => {
+      const isDark = e.target.checked;
+      const nextTheme = isDark ? "dark" : "light";
+      
+      localStorage.setItem("color-scheme", nextTheme);
+      document.querySelector('meta[name="color-scheme"]').content = nextTheme;
+      
+      if (nextTheme === "dark") {
+        document.documentElement.classList.add("dark-theme");
+        document.documentElement.classList.remove("light-theme");
+        showToast("Dark theme enabled");
+      } else {
+        document.documentElement.classList.add("light-theme");
+        document.documentElement.classList.remove("dark-theme");
+        showToast("Light theme enabled");
+      }
+    });
+  }
 
   // Listen to external OS theme changes
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
@@ -766,9 +773,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (isDark) {
         document.documentElement.classList.add("dark-theme");
         document.documentElement.classList.remove("light-theme");
+        if (themeToggleSwitch) themeToggleSwitch.checked = true;
       } else {
         document.documentElement.classList.add("light-theme");
         document.documentElement.classList.remove("dark-theme");
+        if (themeToggleSwitch) themeToggleSwitch.checked = false;
       }
     }
   });

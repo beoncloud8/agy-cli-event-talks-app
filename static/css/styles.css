@@ -364,6 +364,96 @@ body {
   transform: translateY(0);
 }
 
+/* ==========================================================================
+   THEME SWITCH SLIDER
+   ========================================================================== */
+.theme-switch {
+  position: relative;
+  display: inline-block;
+  width: 58px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  border-radius: 30px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 24px;
+  width: 24px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--color-primary);
+  transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  z-index: 2;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.switch-icon {
+  width: 14px;
+  height: 14px;
+  z-index: 1;
+  transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.switch-icon.sun {
+  color: var(--color-primary);
+  margin-left: 1px;
+}
+
+.switch-icon.moon {
+  color: var(--color-text-tertiary);
+  margin-right: 1px;
+}
+
+/* Checked (Dark Theme) States */
+input:checked + .slider {
+  background-color: var(--color-card-bg);
+  border-color: var(--color-border);
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+input:checked + .slider .switch-icon.sun {
+  color: var(--color-text-tertiary);
+}
+
+input:checked + .slider .switch-icon.moon {
+  color: var(--color-primary);
+}
+
+/* Hover effects */
+.theme-switch:hover .slider {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 10px var(--color-primary-soft);
+}
+
+
 .badge {
   position: absolute;
   top: -4px;
