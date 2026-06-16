@@ -165,7 +165,12 @@
         
         <div class="releases-header">
           <h2 class="list-title" id="list-title-text">All Release Notes</h2>
-          <span class="results-count" id="results-count-text">Loading...</span>
+          <div class="releases-header-actions" style="display: flex; align-items: center; gap: 0.75rem;">
+            <button id="export-csv" class="btn btn-secondary" title="Export Current List to CSV" style="display: none; padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; height: 32px; gap: 0.25rem;">
+              <i data-lucide="download" style="width: 14px; height: 14px;"></i> Export to CSV
+            </button>
+            <span class="results-count" id="results-count-text">Loading...</span>
+          </div>
         </div>
 
         <!-- Loading Skeleton -->

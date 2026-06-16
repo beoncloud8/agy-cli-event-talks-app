@@ -24,6 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const refreshFeedBtn = document.getElementById("refresh-feed");
   const refreshIcon = document.getElementById("refresh-icon");
   const themeToggleBtn = document.getElementById("theme-toggle");
+  const exportCsvBtn = document.getElementById("export-csv");
   
   const skeletonContainer = document.getElementById("skeleton-container");
   const releasesContainer = document.getElementById("releases-container");
@@ -98,9 +99,11 @@ document.addEventListener("DOMContentLoaded", () => {
       skeletonContainer.style.display = "flex";
       releasesContainer.style.display = "none";
       emptyState.style.display = "none";
+      if (exportCsvBtn) exportCsvBtn.style.display = "none";
     } else {
       skeletonContainer.style.display = "none";
       releasesContainer.style.display = "flex";
+      if (exportCsvBtn) exportCsvBtn.style.display = "flex";
     }
   }
 
@@ -329,6 +332,9 @@ document.addEventListener("DOMContentLoaded", () => {
             <h3>${release.title}</h3>
           </div>
           <div class="card-meta-actions">
+            <button class="btn-icon btn-secondary btn-mini copy-card-btn" title="Copy Card Notes to Clipboard">
+              <i data-lucide="copy"></i>
+            </button>
             <button class="btn-icon btn-secondary btn-mini share-release-btn" data-url="${release.link}" title="Copy Release Link">
               <i data-lucide="share-2"></i>
             </button>
@@ -338,6 +344,14 @@ document.addEventListener("DOMContentLoaded", () => {
           <!-- Populated per update item -->
         </div>
       `;
+
+      // Attach copy card handler
+      const copyCardBtn = card.querySelector(".copy-card-btn");
+      if (copyCardBtn) {
+        copyCardBtn.addEventListener("click", () => {
+          copyCardContent(release);
+        });
+      }
 
       const itemsContainer = card.querySelector(".release-items");
 
@@ -582,10 +596,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 3000);
   }
 
-  async function copyToClipboard(text) {
+  async function copyToClipboard(text, customMessage = "Direct link copied to clipboard") {
     try {
       await navigator.clipboard.writeText(text);
-      showToast("Direct link copied to clipboard");
+      showToast(customMessage);
     } catch (err) {
       console.error("Failed to copy to clipboard", err);
       // Fallback
@@ -595,8 +609,131 @@ document.addEventListener("DOMContentLoaded", () => {
       input.select();
       document.execCommand("copy");
       document.body.removeChild(input);
-      showToast("Direct link copied to clipboard");
+      showToast(customMessage);
     }
+  }
+
+  function copyCardContent(release) {
+    let text = `BigQuery Release Notes - ${release.title}\n`;
+    text += `${"=".repeat(40)}\n\n`;
+    
+    release.items.forEach((item, index) => {
+      // Strip HTML tags for clean text content
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = item.content;
+      const cleanContent = tempDiv.textContent || tempDiv.innerText || "";
+      
+      text += `[${item.category}] (${index + 1})\n`;
+      text += `${cleanContent.trim()}\n\n`;
+    });
+    
+    text += `Source Link: ${release.link}\n`;
+    
+    copyToClipboard(text, `Copied notes for ${release.title}`);
+  }
+
+  function exportFilteredToCSV() {
+    if (!allReleasesData) return;
+    
+    // Build CSV content
+    const csvRows = [
+      ["Date", "Category", "Content", "Source Link"] // CSV Header
+    ];
+    
+    // Time ranges calculations
+    const now = Date.now();
+    let timeLimit = 0;
+    if (currentFilters.timePeriod !== "all") {
+      const days = parseInt(currentFilters.timePeriod);
+      timeLimit = now - (days * 24 * 60 * 60 * 1000);
+    }
+
+    allReleasesData.entries.forEach(entry => {
+      entry.items.forEach(item => {
+        // 1. View Mode (Bookmarks only)
+        if (currentFilters.viewMode === "bookmarks" && !bookmarks.includes(item.id)) {
+          return;
+        }
+
+        // 2. Category Filter
+        if (currentFilters.category !== "All" && item.category !== currentFilters.category) {
+          return;
+        }
+
+        // 3. Time Filter
+        if (timeLimit > 0 && item.timestamp < timeLimit) {
+          return;
+        }
+
+        // 4. Search Filter
+        if (currentFilters.search) {
+          const searchLower = currentFilters.search.toLowerCase();
+          const matchesCategory = item.category.toLowerCase().includes(searchLower);
+          
+          const tempDiv = document.createElement("div");
+          tempDiv.innerHTML = item.content;
+          const cleanText = tempDiv.textContent || tempDiv.innerText || "";
+          const matchesContent = cleanText.toLowerCase().includes(searchLower);
+          
+          if (!matchesCategory && !matchesContent) {
+            return;
+          }
+        }
+
+        // Strip HTML tags from item content for clean plain-text CSV cell
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = item.content;
+        const cleanContent = (tempDiv.textContent || tempDiv.innerText || "").trim();
+
+        // Escape double quotes inside CSV cell
+        const escapedContent = cleanContent.replace(/"/g, '""');
+        const escapedDate = entry.title.replace(/"/g, '""');
+        const escapedCategory = item.category.replace(/"/g, '""');
+        const escapedLink = entry.link.replace(/"/g, '""');
+
+        csvRows.push([
+          `"${escapedDate}"`,
+          `"${escapedCategory}"`,
+          `"${escapedContent}"`,
+          `"${escapedLink}"`
+        ]);
+      });
+    });
+
+    if (csvRows.length <= 1) {
+      showToast("No release notes found to export");
+      return;
+    }
+
+    // Join rows with CRLF
+    const csvContent = csvRows.map(e => e.join(",")).join("\r\n");
+    
+    // Create Blob and download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    
+    // Construct dynamic filename based on active filters
+    let filename = "bigquery-releases";
+    if (currentFilters.category !== "All") {
+      filename += `-${currentFilters.category.toLowerCase()}`;
+    }
+    if (currentFilters.search) {
+      filename += `-search`;
+    }
+    if (currentFilters.viewMode === "bookmarks") {
+      filename += "-bookmarks";
+    }
+    filename += ".csv";
+
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast(`Exported ${csvRows.length - 1} items to CSV`);
   }
 
   // ==========================================================================
@@ -689,6 +826,13 @@ document.addEventListener("DOMContentLoaded", () => {
   refreshFeedBtn.addEventListener("click", () => {
     fetchReleaseNotes(true);
   });
+
+  // Export to CSV Trigger
+  if (exportCsvBtn) {
+    exportCsvBtn.addEventListener("click", () => {
+      exportFilteredToCSV();
+    });
+  }
 
   // Reset Filters Empty State Action
   resetFiltersBtn.addEventListener("click", () => {
